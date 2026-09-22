@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rock Categorization Task (besod / makif / tolar)</title>
+
+  <!-- jsPsych v7 -->
+  <script src="https://unpkg.com/jspsych@7.3.4"></script>
+
+  <!-- Plugins -->
+  <script src="https://unpkg.com/@jspsych/plugin-preload@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-text@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-instructions@1.1.2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="../../experiment-common.js"></script>
+
+  <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" />
+
+  <style>
+    body { background: #f6f6f6; }
+    .jspsych-content { max-width: 980px; }
+
+    .next-btn{
+  font-size: 16px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #cfcfcf;
+  background: #ffffff;
+  cursor: pointer;
+}
+.next-btn:hover{ background:#f2f2f2; }
+
+
+    .card {
+      background: #fff;
+      border: 1px solid #e6e6e6;
+      border-radius: 14px;
+      padding: 18px 18px 14px 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .title { font-size: 22px; font-weight: 700; margin: 0 0 8px 0; color: #111; }
+    .subtitle { font-size: 16px; margin: 0; color: #333; line-height: 1.4; }
+
+    .stim-wrap{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      margin: 10px 0 6px 0;
+    }
+    .stim-img{
+      width: 520px;
+      max-width: 92%;
+      height: auto;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+    }
+
+    .prompt { font-size: 16px; color:#111; margin-top: 8px; margin-bottom: 6px; line-height: 1.45; }
+    .tiny { font-size: 13px; color:#666; margin-top: 6px; }
+
+    .jspsych-survey-text textarea {
+      width: 96% !important;
+      min-height: 120px !important;
+      font-size: 16px !important;
+      line-height: 1.4 !important;
+      border-radius: 10px !important;
+      border: 1px solid #ccc !important;
+      padding: 10px !important;
+    }
+
+    .jspsych-btn { font-size: 16px; padding: 10px 16px; border-radius: 10px; }
+
+    .fb {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #e6e6e6;
+      background: #fbfbfb;
+    }
+    .fb-title { font-weight: 800; font-size: 20px; margin-bottom: 4px; }
+  </style>
+</head>
+
+<body></body>
+
+<script>
+  const launchContext = window.ExperimentPackage
+    ? window.ExperimentPackage.getLaunchContext(window.location)
+    : { participantId: "", taskKey: "", returnUrl: "" };
+  const prefilledParticipantId = (launchContext.participantId || "").trim();
+
+  /***********************
+   * 0) Helpers
+   ***********************/
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function timestampForFilename(){
+    const d = new Date();
+    return (
+      d.getFullYear() +
+      pad2(d.getMonth()+1) +
+      pad2(d.getDate()) + "_" +
+      pad2(d.getHours()) +
+      pad2(d.getMinutes()) +
+      pad2(d.getSeconds())
+    );
+  }
+  function downloadWorkbook(filename, sheets){
+    const wb = XLSX.utils.book_new();
+    sheets.forEach(s => {
+      const ws = XLSX.utils.json_to_sheet(s.rows, { header: s.header });
+      XLSX.utils.book_append_sheet(wb, ws, s.name);
+    });
+    XLSX.writeFile(wb, filename);
+  }
+  function fullName(letter){
+    if(letter === "b") return "besod";
+    if(letter === "m") return "makif";
+    return "tolar";
+  }
+
+  /***********************
+   * 1) Build stimuli list
+   * Folder: sti/
+   ***********************/
+  const N_PER_CAT = 8;
+
+  function buildStimArray(prefix, correctLetter){
+    const arr = [];
+    for(let i=1; i<=N_PER_CAT; i++){
+      arr.push({
+        ItemID: `${prefix}${i}`,
+        img: `sti/${prefix}${i}.png`,
+        correct: correctLetter
+      });
+    }
+    return arr;
+  }
+
+  const stimuli = [
+    ...buildStimArray("b", "b"),
+    ...buildStimArray("m", "m"),
+    ...buildStimArray("t", "t"),
+  ];
+
+  const all_image_files = stimuli.map(s => s.img);
+
+  /***********************
+   * 2) Init jsPsych
+   ***********************/
+  let participant_id = prefilledParticipantId || "";
+  let trialCounter = 0;
+
+  const jsPsych = initJsPsych({
+    on_finish: function(){
+      const rows = jsPsych.data.get().filter({task: "categorize"}).values();
+      const reflectionTrials = jsPsych.data.get().filterCustom(r =>
+        r.task === "middle_reflection" || r.task === "final_reflection"
+      ).values();
+
+      const categorizeHeader = [
+        "ID",
+        "Block",
+        "TrialID",
+        "ItemID",
+        "Correct_Category",
+        "Response",
+        "choice_score"
+      ];
+      const categorizeRows = rows.map((r, idx) => ({
+        ID: r.ID ?? participant_id,
+        Block: Math.floor(idx / 24) + 1,
+        TrialID: r.TrialID ?? "",
+        ItemID: r.ItemID ?? "",
+        Correct_Category: r.Correct_Category ?? "",
+        Response: r.Response ?? "",
+        choice_score: r.choice_score ?? ""
+      }));
+
+      const reflectionHeader = ["ID", "Category", "description", "trialID"];
+      const reflectionRows = [];
+      reflectionTrials.forEach(r => {
+        const descriptions = r.response || {};
+        const reflectionLabel = (r.task === "middle_reflection")
+          ? "middle reflection"
+          : "final reflection";
+        ["b", "m", "t"].forEach(cat => {
+          reflectionRows.push({
+            ID: participant_id,
+            Category: cat,
+            description: descriptions[cat] ?? "",
+            trialID: reflectionLabel
+          });
+        });
+      });
+
+      const fname = `S${participant_id}_Rock_${timestampForFilename()}.xlsx`;
+      downloadWorkbook(fname, [
+        { name: "categorize", header: categorizeHeader, rows: categorizeRows },
+        { name: "reflections", header: reflectionHeader, rows: reflectionRows }
+      ]);
+      if (window.ExperimentPackage && launchContext.taskKey) {
+        window.ExperimentPackage.completeTaskAndReturn(launchContext.taskKey, launchContext.returnUrl, 1200);
+      }
+    }
+  });
+  if (prefilledParticipantId) {
+    jsPsych.data.addProperties({ ID: prefilledParticipantId });
+  }
+
+  /***********************
+   * 3) Timeline pieces
+   ***********************/
+  const preload = {
+    type: jsPsychPreload,
+    images: all_image_files
+  };
+
+  const get_id = {
+    type: jsPsychSurveyText,
+    questions: [{prompt: "Participant ID:", name: "pid", required: true}],
+    preamble: `
+      <div class="card">
+        <div class="title">Rock Categorization Task</div>
+        <div class="subtitle">Please enter your participant ID to begin.</div>
+      </div>
+    `,
+    on_finish: function(data){
+      participant_id = data.response.pid.trim().replaceAll(/\s+/g, "_");
+      jsPsych.data.addProperties({ ID: participant_id });
+    }
+  };
+
+  const intro = {
+    type: jsPsychInstructions,
+    pages: [
+      `
+      <div class="card">
+        <div class="title">Instructions</div>
+        <div class="subtitle">
+          You are helping an architecture team study how people describe and sort rock arrangements used in designs.</p>
+          In this task, you will learn to categorize rocks into three categories.
+        </div>
+      </div>
+      `,
+      `
+     
+      <div class="card">
+  <div class="title">Instructions</div>
+
+  <div class="subtitle">
+    In this task, you will learn to categorize rocks into three categories.
+  </div>
+
+  <ul style="text-align: left; margin-top: 15px; line-height: 1.6;">
+    <li>You will see pictures of different rocks.</li>
+    <li>Your task is to decide whether each rock is a 
+      <b>besod</b>, <b>makif</b>, or <b>tolar</b>.
+    </li>
+    <li>These are made-up labels and do not have real meanings.</li>
+    <li>You will receive feedback after each response.</li>
+  </ul>
+
+  <div class="subtitle" style="margin-top: 20px;">
+    Try your best to respond as accurately as possible.
+  </div>
+</div>
+
+<p style="margin-top: 25px;">
+  <b>Do your best — you’ll learn as you go!</b>
+</p>
+      `
+    ],
+    show_clickable_nav: true
+  };
+
+  const categorize_with_feedback = {
+  type: jsPsychHtmlButtonResponse,
+  stimulus: function () {
+    const v = jsPsych.timelineVariable("img");
+    return `
+      <div class="card">
+        <div class="stim-wrap"><img class="stim-img" src="${v}" /></div>
+        <div class="prompt"><b>What is this?</b></div>
+
+        <div id="fb-box" class="fb" style="display:none;"></div>
+
+        <div id="next-wrap" style="margin-top:12px; display:none;">
+          <button id="next-btn" class="next-btn">Next</button>
+        </div>
+      </div>
+    `;
+  },
+  choices: ["besod", "makif", "tolar"],
+  response_ends_trial: false,
+
+  data: function(){
+    return {
+      task: "categorize",
+      ItemID: jsPsych.timelineVariable("ItemID"),
+      img: jsPsych.timelineVariable("img"),
+      Correct_Category: jsPsych.timelineVariable("correct")
+    };
+  },
+
+  on_load: function(){
+    const display = jsPsych.getDisplayElement();
+
+    function fullName(letter){
+      if(letter === "b") return "besod";
+      if(letter === "m") return "makif";
+      return "tolar";
+    }
+
+    const choiceBtns = display.querySelectorAll(".jspsych-html-button-response-button button");
+    const fbBox = display.querySelector("#fb-box");
+    const nextWrap = display.querySelector("#next-wrap");
+    const nextBtn = display.querySelector("#next-btn");
+
+    const correctLetter = jsPsych.timelineVariable("correct"); // b/m/t
+
+    // We'll fill these when they choose
+    let payload = null;
+
+    choiceBtns.forEach((btn, idx) => {
+      btn.addEventListener("click", () => {
+        const responseLetter = (idx === 0) ? "b" : (idx === 1) ? "m" : "t";
+        const score = (responseLetter === correctLetter) ? 1 : 0;
+
+        // Assign TrialID now (categorize-only counter)
+        trialCounter += 1;
+
+        // Save what we want to write into THIS categorize trial when "Next" is clicked
+        payload = {
+          TrialID: trialCounter,
+          Response: responseLetter,
+          choice_score: score
+        };
+
+        // Hide choice buttons
+        choiceBtns.forEach(b => b.style.display = "none");
+
+        // Show feedback
+        fbBox.style.display = "block";
+        fbBox.innerHTML = (score === 1)
+          ? `<div class="fb-title">Correct!</div> It is <b>${fullName(correctLetter)}</b>.</div>`
+          : `<div class="fb-title">Incorrect</div>
+             <div>The correct category is <b>${fullName(correctLetter)}</b>.</div>`;
+
+        // Show Next
+        nextWrap.style.display = "block";
+      }, { once: true });
+    });
+
+    // Next ends the trial AND attaches payload to the categorize row
+    nextBtn.addEventListener("click", () => {
+      if (!payload) return; // safety
+      jsPsych.finishTrial(payload);
+    });
+  }
+};
+
+
+  const training_stimuli = jsPsych.randomization.shuffle(stimuli.slice(0,24));
+
+  const trial_procedure_block1 = {
+    timeline: [categorize_with_feedback],
+    timeline_variables: training_stimuli,
+    randomize_order: false
+  };
+
+  const trial_procedure_block2 = {
+    timeline: [categorize_with_feedback],
+    timeline_variables: training_stimuli,
+    randomize_order: false
+  };
+
+  const middle_reflection = {
+    type: jsPsychSurveyText,
+    preamble: `
+      <div class="card">
+        <div class="title">Middle Reflection</div>
+        <div class="subtitle">
+          In your own words, what kind of rock do you think each category label refers to?
+          Please give a short description for each one.
+        </div>
+      </div>
+    `,
+    questions: [
+      { prompt: "Besod:", name: "b", rows: 3, columns: 60, required: true },
+      { prompt: "Makif:", name: "m", rows: 3, columns: 60, required: true },
+      { prompt: "Tolar:", name: "t", rows: 3, columns: 60, required: true }
+    ],
+    button_label: "Submit",
+    data: { task: "middle_reflection" }
+  };
+
+  const block_transition = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+      <div class="card">
+        <div class="title">You are half way done! Ready for more rocks?</div>
+        <div class="subtitle">
+          You will do the same thing: continue to categorize rocks and learn from feedback.
+        </div>
+      </div>
+    `,
+    choices: ["Continue"]
+  };
+
+  const final_reflection = {
+    type: jsPsychSurveyText,
+    preamble: `
+      <div class="card">
+        <div class="title">Final Reflection</div>
+        <div class="subtitle">
+          You have now completed the second block. In your own words, what kind of rock
+          do you think each category label refers to? Please give a short description for each one.
+        </div>
+      </div>
+    `,
+    questions: [
+      { prompt: "Besod:", name: "b", rows: 3, columns: 60, required: true },
+      { prompt: "Makif:", name: "m", rows: 3, columns: 60, required: true },
+      { prompt: "Tolar:", name: "t", rows: 3, columns: 60, required: true }
+    ],
+    button_label: "Submit",
+    data: { task: "final_reflection" }
+  };
+
+
+  const end_screen = {
+  type: jsPsychHtmlButtonResponse,
+  stimulus: `
+    <div class="card">
+      <div class="title">All done!</div>
+      <div class="subtitle">
+        Thank you for participating.<br><br>
+        Downloading your data now…
+      </div>
+    </div>
+  `,
+  choices: ["(hidden)"],
+  response_ends_trial: false,
+  trial_duration: 1200,
+  on_load: function(){
+    // hide the dummy button
+    const btn = document.querySelector(".jspsych-html-button-response-button");
+    if (btn) btn.style.display = "none";
+  }
+};
+
+
+  /***********************
+   * 4) Run
+   ***********************/
+  const timeline = [preload];
+  if (!prefilledParticipantId) {
+    timeline.push(get_id);
+  }
+  timeline.push(
+    intro,
+    trial_procedure_block1,
+    middle_reflection,
+    block_transition,
+    trial_procedure_block2,
+    final_reflection,
+    end_screen
+  );
+  jsPsych.run(timeline);
+</script>
+</html>

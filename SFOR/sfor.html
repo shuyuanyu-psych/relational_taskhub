@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SFOR Task</title>
+  <script src="../experiment-common.js"></script>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --ink: #1f2933;
+      --muted: #536170;
+      --line: #d9e0e8;
+      --accent: #255c7a;
+      --accent-hover: #1d4b64;
+      --accent-soft: #e8f3f7;
+      --danger: #9f2d2d;
+      --focus: #f4c95d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 18px;
+    }
+
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    .page {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      padding: 28px 18px 36px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      box-shadow: 0 10px 28px rgba(31, 41, 51, 0.08);
+    }
+
+      .topline {
+        display: flex;
+        justify-content: flex-end;
+        gap: 14px;
+        align-items: center;
+        margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+      .step {
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: 30px;
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0 0 16px;
+      line-height: 1.55;
+    }
+
+    .intro {
+      max-width: 780px;
+      white-space: pre-line;
+    }
+
+    .instruction {
+      margin-bottom: 22px;
+      font-size: 21px;
+      font-weight: 700;
+      line-height: 1.4;
+      white-space: pre-line;
+    }
+
+    .stimulus-wrap {
+      width: 100%;
+      margin: 16px 0 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .stimulus {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    label {
+      display: block;
+      margin: 0 0 10px;
+      font-weight: 700;
+    }
+
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 170px;
+      resize: vertical;
+      padding: 14px;
+      border: 1px solid #b9c5d1;
+      border-radius: 8px;
+      color: var(--ink);
+      background: #fff;
+      line-height: 1.45;
+    }
+
+    textarea:focus,
+    button:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(58px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .choice {
+      min-height: 54px;
+      border: 1px solid #9eacb9;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .choice[aria-pressed="true"] {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+
+    .action-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .primary {
+      min-height: 46px;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 18px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .primary:disabled {
+      cursor: not-allowed;
+      background: #9daab5;
+    }
+
+    .error {
+      display: none;
+      margin: 14px 0 0;
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .error.visible {
+      display: block;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        font-size: 16px;
+      }
+
+      .page {
+        padding: 16px 10px 24px;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      h1 {
+        font-size: 25px;
+      }
+
+      .instruction {
+        font-size: 18px;
+      }
+
+      .choices {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="panel" aria-live="polite">
+      <div class="topline">
+        <span id="step-line" class="step"></span>
+      </div>
+      <div id="content"></div>
+      <p id="error" class="error" role="alert"></p>
+      <div class="actions">
+        <div id="action-group" class="action-group"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const context = window.ExperimentPackage.getLaunchContext(window.location);
+    const state = window.ExperimentPackage.getState();
+    const stepLine = document.getElementById("step-line");
+    const content = document.getElementById("content");
+    const error = document.getElementById("error");
+    const actionGroup = document.getElementById("action-group");
+
+    const surveyKey = "thinkbot_sfor_responses_v1";
+    const participantId = context.participantId || state.participantId || "";
+    function getLocalTimestamp(date) {
+      const d = date || new Date();
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      const seconds = String(d.getSeconds()).padStart(2, "0");
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+
+    function getLocalFilenameTimestamp(date) {
+      const d = date || new Date();
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      const seconds = String(d.getSeconds()).padStart(2, "0");
+      return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+    }
+
+    const startedAt = new Date();
+    const response = {
+      participant_id: participantId,
+      task_key: context.taskKey || "D",
+      started_at: getLocalTimestamp(startedAt),
+      trial_1_text: "",
+      trial_2_choice: "",
+      trial_3_text: "",
+      trial_4_choice: "",
+      completed_at: ""
+    };
+
+    let screen = "intro";
+
+    function setError(message) {
+      error.textContent = message || "";
+      error.classList.toggle("visible", Boolean(message));
+    }
+
+    function saveResponse() {
+      try {
+        const existing = JSON.parse(window.localStorage.getItem(surveyKey) || "[]");
+        existing.push({ ...response });
+        window.localStorage.setItem(surveyKey, JSON.stringify(existing));
+      } catch (saveError) {
+        window.localStorage.setItem(surveyKey, JSON.stringify([{ ...response }]));
+      }
+    }
+
+    function downloadResponse() {
+      if (!window.ExperimentPackage.downloadCsv) return;
+      const safeId = participantId || "unknown";
+      const stamp = getLocalFilenameTimestamp();
+      window.ExperimentPackage.downloadCsv(`S${safeId}_SFOR_${stamp}.csv`, [{ ...response }]);
+    }
+
+    function renderIntro() {
+      screen = "intro";
+      stepLine.textContent = "Introduction";
+      setError("");
+      content.innerHTML = `
+        <h1>Space Game</h1>
+        <p class="intro">In the future, space explorers will often need to transport items from Earth to their space bases.
+
+Fortunately, they have teleportation machines to teleport items between Earth and their base. But these teleportation machines aren't perfect -- items get changed differently after being sent to different destinations.
+
+Now, they are sending some items to two new bases on the planets of Tedarus and Olipula, and they want to find out what will happen to the items when they are sent there.</p>
+      `;
+      actionGroup.innerHTML = '<button id="start-btn" class="primary" type="button">Next</button>';
+      document.getElementById("start-btn").addEventListener("click", renderTrialOne);
+    }
+
+    function renderTrialOne() {
+      screen = "trial1";
+      stepLine.textContent = "Question 1 of 4";
+      setError("");
+      content.innerHTML = `
+        <p class="instruction">Describe <em>thoroughly</em> and <em>exactly</em>
+how the packages have changed when they were sent to Teradus.</p>
+        <div class="stimulus-wrap">
+          <img class="stimulus" src="sti/sti_11.png" alt="Packages sent to Teradus" />
+        </div>
+        <label for="trial-1-response">Your description</label>
+        <textarea id="trial-1-response" autocomplete="off"></textarea>
+      `;
+      actionGroup.innerHTML = '<button id="next-btn" class="primary" type="button">Next</button>';
+      const textInput = document.getElementById("trial-1-response");
+      textInput.value = response.trial_1_text;
+      textInput.focus();
+      document.getElementById("next-btn").addEventListener("click", function () {
+        response.trial_1_text = textInput.value.trim();
+        if (!response.trial_1_text) {
+          setError("Please describe how the packages changed before continuing.");
+          textInput.focus();
+          return;
+        }
+        renderTrialTwo();
+      });
+    }
+
+    function renderTrialTwo() {
+      screen = "trial2";
+      stepLine.textContent = "Question 2 of 4";
+      setError("");
+      content.innerHTML = `
+        <p class="instruction">Now they are sending these packages to Teradus.
+Select one option that you think will most likely arrive in Teradus, based on what happened last time.</p>
+        <div class="stimulus-wrap">
+          <img class="stimulus" src="sti/sti_12.png" alt="Six package options labeled A through F" />
+        </div>
+        <label>Choose one option</label>
+        <div class="choices" role="group" aria-label="Package choices">
+          ${["A", "B", "C", "D", "E", "F"].map((letter) => (
+            `<button class="choice" type="button" data-choice="${letter}" aria-pressed="${response.trial_2_choice === letter}">${letter}</button>`
+          )).join("")}
+        </div>
+      `;
+      actionGroup.innerHTML = '<button id="next-btn" class="primary" type="button">Next</button>';
+      const choiceButtons = Array.from(document.querySelectorAll(".choice"));
+      choiceButtons.forEach((button) => {
+        button.addEventListener("click", function () {
+          response.trial_2_choice = button.dataset.choice;
+          choiceButtons.forEach((item) => {
+            item.setAttribute("aria-pressed", String(item === button));
+          });
+          setError("");
+        });
+      });
+      document.getElementById("next-btn").addEventListener("click", function () {
+        if (!response.trial_2_choice) {
+          setError("Please select one option before continuing.");
+          return;
+        }
+        renderTrialThree();
+      });
+    }
+
+    function renderTrialThree() {
+      screen = "trial3";
+      stepLine.textContent = "Question 3 of 4";
+      setError("");
+      content.innerHTML = `
+        <p class="instruction">Describe <em>thoroughly</em> and <em>exactly</em>
+how the packages have changed when they were sent to Olipula.</p>
+        <div class="stimulus-wrap">
+          <img class="stimulus" src="sti/sti_21.png" alt="Packages sent to Olipula" />
+        </div>
+        <label for="trial-3-response">Your description</label>
+        <textarea id="trial-3-response" autocomplete="off"></textarea>
+      `;
+      actionGroup.innerHTML = '<button id="next-btn" class="primary" type="button">Next</button>';
+      const textInput = document.getElementById("trial-3-response");
+      textInput.value = response.trial_3_text;
+      textInput.focus();
+      document.getElementById("next-btn").addEventListener("click", function () {
+        response.trial_3_text = textInput.value.trim();
+        if (!response.trial_3_text) {
+          setError("Please describe how the packages changed before continuing.");
+          textInput.focus();
+          return;
+        }
+        renderTrialFour();
+      });
+    }
+
+    function renderTrialFour() {
+      screen = "trial4";
+      stepLine.textContent = "Question 4 of 4";
+      setError("");
+      content.innerHTML = `
+        <p class="instruction">Now they are sending these packages to Olipula.
+Select one option that you think will most likely arrive in Olipula, based on what happened last time.</p>
+        <div class="stimulus-wrap">
+          <img class="stimulus" src="sti/sti_22.png" alt="Six Olipula package options labeled A through F" />
+        </div>
+        <label>Choose one option</label>
+        <div class="choices" role="group" aria-label="Package choices">
+          ${["A", "B", "C", "D", "E", "F"].map((letter) => (
+            `<button class="choice" type="button" data-choice="${letter}" aria-pressed="${response.trial_4_choice === letter}">${letter}</button>`
+          )).join("")}
+        </div>
+      `;
+      actionGroup.innerHTML = '<button id="finish-btn" class="primary" type="button">Finish</button>';
+      const choiceButtons = Array.from(document.querySelectorAll(".choice"));
+      choiceButtons.forEach((button) => {
+        button.addEventListener("click", function () {
+          response.trial_4_choice = button.dataset.choice;
+          choiceButtons.forEach((item) => {
+            item.setAttribute("aria-pressed", String(item === button));
+          });
+          setError("");
+        });
+      });
+      document.getElementById("finish-btn").addEventListener("click", finishSurvey);
+    }
+
+    function finishSurvey() {
+      if (!response.trial_4_choice) {
+        setError("Please select one option before finishing.");
+        return;
+      }
+      const completedAt = new Date();
+      response.completed_at = getLocalTimestamp(completedAt);
+      saveResponse();
+      downloadResponse();
+      window.ExperimentPackage.completeTaskAndReturn(response.task_key, context.returnUrl, 600);
+    }
+
+    renderIntro();
+  </script>
+</body>
+</html>

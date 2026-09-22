@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Task Center</title>
+  <script src="experiment-common.js"></script>
+  <style>
+    :root {
+      --bg: #fbf8f3;
+      --ink: #211e1b;
+      --muted: #6c645a;
+      --line: #e6dcd0;
+      --card: #fffefa;
+      --accent: #2d6a4f;
+      --accent-soft: #deefe6;
+      --locked: #b6a999;
+      --done: #357960;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(215, 234, 223, 0.8), transparent 28%),
+        linear-gradient(180deg, #f7f1e8 0%, var(--bg) 100%);
+      min-height: 100vh;
+    }
+
+    .page {
+      width: min(1100px, calc(100vw - 28px));
+      margin: 24px auto 32px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .top,
+    .panel,
+    .task-card {
+      background: var(--card);
+      border: 1px solid rgba(69, 57, 44, 0.1);
+      border-radius: 22px;
+      box-shadow: 0 16px 40px rgba(67, 55, 42, 0.08);
+    }
+
+    .top {
+      padding: 26px 28px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      width: fit-content;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 12px;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+    }
+
+    .summary {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 1rem;
+    }
+
+    .meta-grid,
+    .task-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .meta-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    .meta-label {
+      font-size: 0.84rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .meta-value {
+      margin-top: 8px;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .task-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .task-card {
+      padding: 20px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .task-topline {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .task-order {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: #faf5ee;
+      font-weight: 700;
+    }
+
+    .status {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .status.current {
+      background: #e7f1eb;
+      color: var(--accent);
+    }
+
+    .status.done {
+      background: #dcefe8;
+      color: var(--done);
+    }
+
+    .status.locked {
+      background: #efe7dc;
+      color: var(--locked);
+    }
+
+    .task-copy {
+      color: var(--muted);
+      line-height: 1.55;
+      min-height: 3.1em;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button,
+    a.button-link {
+      font: inherit;
+    }
+
+    .launch-btn,
+    .secondary-btn,
+    .disabled-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .launch-btn {
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .secondary-btn {
+      background: #efe8dd;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    .disabled-btn {
+      background: #f1ece4;
+      color: #a0907d;
+      cursor: not-allowed;
+    }
+
+    .footer-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    @media (max-width: 860px) {
+      .meta-grid,
+      .task-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .page {
+        width: min(100vw - 16px, 1100px);
+        margin-top: 10px;
+      }
+
+      .top,
+      .panel,
+      .task-card {
+        border-radius: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page" id="app"></main>
+
+  <script>
+    const app = document.getElementById("app");
+    const state = window.ExperimentPackage.getState();
+
+    if (!state.participantId || !state.group || !state.order.length) {
+      app.innerHTML = `
+        <section class="panel">
+          <h2>Participant session not found</h2>
+          <p class="summary">Start from the introduction page so the package can assign the participant to the correct counterbalanced order.</p>
+          <div class="footer-actions">
+            <a class="secondary-btn button-link" href="introduction_page.html">Go to Introduction Page</a>
+          </div>
+        </section>
+      `;
+    } else {
+      renderHub();
+    }
+
+    function renderHub() {
+      const nextTaskKey = window.ExperimentPackage.getNextTaskKey(state);
+      const allDone = !nextTaskKey;
+      const orderedTasks = window.ExperimentPackage.getOrderedTasks(state.order);
+
+      app.innerHTML = `
+        <section class="top">
+          <div class="eyebrow">Task Center</div>
+          <h1>Participant ${escapeHtml(state.participantId)}</h1>
+          <p class="summary">Please complete the following four tasks in sequence, and let the experimenter know once you are all done.</p>
+        </section>
+
+        <section class="meta-grid">
+          <div class="panel">
+            <div class="meta-label">Participant Number</div>
+            <div class="meta-value">${escapeHtml(state.participantNumber)}</div>
+          </div>
+          <div class="panel">
+            <div class="meta-label">Progress</div>
+            <div class="meta-value">${Object.keys(state.completedTasks).length} / ${state.order.length} completed</div>
+          </div>
+        </section>
+
+        <section class="task-grid">
+          ${orderedTasks.map((task, index) => buildTaskCard(task, index + 1, nextTaskKey, allDone)).join("")}
+        </section>
+
+        ${allDone ? `
+          <section class="panel">
+            <h2>Tasks Complete</h2>
+            <p class="summary">Please notify the experimenter for the next step.</p>
+          </section>
+        ` : ""}
+      `;
+
+      document.querySelectorAll("[data-task-key]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const taskKey = button.getAttribute("data-task-key");
+          window.ExperimentPackage.launchTask(taskKey, window.location.href);
+        });
+      });
+    }
+
+    function buildTaskCard(task, orderNumber, nextTaskKey, allDone) {
+      const completed = Boolean(state.completedTasks[task.key]);
+      const unlocked = window.ExperimentPackage.isTaskUnlocked(task.key, state);
+      const isCurrent = !completed && task.key === nextTaskKey;
+      const statusClass = completed ? "done" : isCurrent ? "current" : "locked";
+      const statusLabel = completed ? "Completed" : isCurrent ? "Current Task" : "Locked";
+
+      let actionHtml = `<button class="disabled-btn" type="button" disabled>Locked until earlier tasks are finished</button>`;
+      if (completed) {
+        actionHtml = `<button class="disabled-btn" type="button" disabled>Completed</button>`;
+      } else if (unlocked && !allDone) {
+        actionHtml = `<button class="launch-btn" type="button" data-task-key="${task.key}">Open ${escapeHtml(task.label)}</button>`;
+      }
+
+      return `
+        <article class="task-card">
+          <div class="task-topline">
+            <span class="task-order">${orderNumber}</span>
+            <span class="status ${statusClass}">${statusLabel}</span>
+          </div>
+          <div>
+            <h3>${escapeHtml(task.shortLabel)}. ${escapeHtml(task.label)}</h3>
+          </div>
+          <p class="task-copy">${escapeHtml(task.description)}</p>
+          <div class="task-actions">${actionHtml}</div>
+        </article>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Picture Match Task (Relation vs Object)</title>
+
+  <!-- jsPsych v7 -->
+  <script src="https://unpkg.com/jspsych@7.3.4"></script>
+
+  <!-- Plugins -->
+  <script src="https://unpkg.com/@jspsych/plugin-preload@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-text@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
+  <script src="../../experiment-common.js"></script>
+  <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" />
+
+  <style>
+    body { background: #ffffff; }
+    .jspsych-content { max-width: 980px; }
+
+    .gap-between{
+  height: 60px;  /* <-- increase for more gap (e.g., 160, 200) */
+}
+
+
+    .instr { font-size: 20px; line-height: 1.45; margin: 10px 0 0 0; }
+    .prompt { font-size: 18px; margin: 18px 0 0 0; }
+    .small-note { font-size: 14px; color: #555; margin-top: 8px; }
+
+    .trial-wrap{
+      width:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:22px;
+      margin-top:10px;
+    }
+
+    .top-area{
+      width:100%;
+      display:flex;
+      justify-content:center;
+      margin-top:6px;
+    }
+
+    .top-img{
+      max-width:520px;
+      max-height:220px;
+      width:auto;
+      height:auto;
+      border-radius:14px;
+    }
+
+    /* Make the two buttons appear in a left/right grid */
+    .jspsych-html-button-response-btngroup{
+      width:100%;
+      display:grid !important;
+      grid-template-columns: 1fr 1fr;
+      gap:32px;                 /* more horizontal space */
+      align-items:start;
+      justify-items:center;
+      margin-top: 120px;         /* <-- more vertical distance from top image */
+    }
+
+    /* Force both option buttons to be the same size */
+    .choice-btn{
+      border:2px solid #e6e6e6;
+      background:#fff;
+      border-radius:18px;
+      padding:14px 14px 12px 14px;
+      cursor:pointer;
+
+      width: 420px;             /* fixed width so A/B are identical */
+      max-width: 44vw;          /* still responsive */
+
+      min-height: 280px;        /* forces same height even if image differs */
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+
+      transition: transform 0.05s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+
+    .choice-btn:hover{
+      border-color:#bdbdbd;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    }
+    .choice-btn:active{ transform: scale(0.99); }
+
+    /* Put the image inside a fixed-size box so A/B always align */
+    .choice-img{
+      width: 100%;
+      height: 210px;            /* fixed image area height */
+      object-fit: contain;      /* keep aspect ratio, no stretching */
+      border-radius:12px;
+      display:block;
+      margin: 0 auto;
+    }
+
+    .option-label{
+      margin-top:12px;
+      font-size:16px;
+      font-weight:700;
+      letter-spacing:0.3px;
+      color:#222;
+    }
+  </style>
+</head>
+
+<body></body>
+
+<script>
+const launchContext = window.ExperimentPackage
+  ? window.ExperimentPackage.getLaunchContext(window.location)
+  : { participantId: "", taskKey: "", returnUrl: "" };
+const prefilledParticipantId = (launchContext.participantId || "").trim();
+
+/** ----------------------------
+ *  CONFIG
+ *  ---------------------------- */
+const STIM_DIR = "stimuli_output_v3";
+const TRIAL_SHEET_ROWS = [
+  { trialID: null, itemID: 1, target: "target_1", rel_match: "relation_1", per_match: "object_1", target_n: "1:3", rel_n: "1:3", per_n: "1:4", rel_match_type: "exact", per_match_type: "one more", target_shape: "triangle", rel_match_shape: "circle", per_match_shape: "triangle", color: "blue", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 2, target: "target_2", rel_match: "relation_2", per_match: "object_2", target_n: "1:4", rel_n: "1:4", per_n: "1:5", rel_match_type: "exact", per_match_type: "one more", target_shape: "star", rel_match_shape: "pentagon", per_match_shape: "star", color: "yellow", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 3, target: "target_3", rel_match: "relation_3", per_match: "object_3", target_n: "1:5", rel_n: "1:5", per_n: "1:6", rel_match_type: "exact", per_match_type: "one more", target_shape: "pentagon", rel_match_shape: "star", per_match_shape: "pentagon", color: "pink", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 4, target: "target_4", rel_match: "relation_4", per_match: "object_4", target_n: "1:3", rel_n: "2:6", per_n: "1:4", rel_match_type: "multiplicative ", per_match_type: "one more", target_shape: "circle ", rel_match_shape: "diamond", per_match_shape: "circle ", color: "green", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 5, target: "target_5", rel_match: "relation_5", per_match: "object_5", target_n: "1:4", rel_n: "2:8", per_n: "1:5", rel_match_type: "multiplicative ", per_match_type: "one more", target_shape: "square", rel_match_shape: "triangle", per_match_shape: "square", color: "red", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 6, target: "target_6", rel_match: "relation_6", per_match: "object_6", target_n: "1:5", rel_n: "2:10", per_n: "1:6", rel_match_type: "multiplicative ", per_match_type: "one more", target_shape: "diamond", rel_match_shape: "square", per_match_shape: "diamond", color: "purple", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 7, target: "target_7", rel_match: "relation_7", per_match: "object_7", target_n: "1:3", rel_n: "1:3", per_n: "1:2", rel_match_type: "exact", per_match_type: "one less", target_shape: "diamond", rel_match_shape: "pentagon", per_match_shape: "diamond", color: "yellow", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 8, target: "target_8", rel_match: "relation_8", per_match: "object_8", target_n: "1:4", rel_n: "1:4", per_n: "1:3", rel_match_type: "exact", per_match_type: "one less", target_shape: "square", rel_match_shape: "circle", per_match_shape: "square", color: "pink", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 9, target: "target_9", rel_match: "relation_9", per_match: "object_9", target_n: "1:5", rel_n: "1:5", per_n: "1:4", rel_match_type: "exact", per_match_type: "one less", target_shape: "circle ", rel_match_shape: "diamond", per_match_shape: "circle ", color: "green", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 10, target: "target_10", rel_match: "relation_10", per_match: "object_10", target_n: "1:3", rel_n: "2:6", per_n: "1:2", rel_match_type: "multiplicative ", per_match_type: "one less", target_shape: "pentagon", rel_match_shape: "triangle", per_match_shape: "pentagon", color: "red", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 11, target: "target_11", rel_match: "relation_11", per_match: "object_11", target_n: "1:4", rel_n: "2:8", per_n: "1:3", rel_match_type: "multiplicative ", per_match_type: "one less", target_shape: "star", rel_match_shape: "square", per_match_shape: "star", color: "purple", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 12, target: "target_12", rel_match: "relation_12", per_match: "object_12", target_n: "1:5", rel_n: "2:10", per_n: "1:4", rel_match_type: "multiplicative ", per_match_type: "one less", target_shape: "triangle", rel_match_shape: "star", per_match_shape: "triangle", color: "blue", rel_match_pos: "left", rel_choice: 1, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 13, target: "target_13", rel_match: "relation_13", per_match: "object_13", target_n: "1:3", rel_n: "1:3", per_n: "1:4", rel_match_type: "exact", per_match_type: "one more", target_shape: "pentagon", rel_match_shape: "triangle", per_match_shape: "pentagon", color: "pink", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 14, target: "target_14", rel_match: "relation_14", per_match: "object_14", target_n: "1:4", rel_n: "1:4", per_n: "1:5", rel_match_type: "exact", per_match_type: "one more", target_shape: "circle", rel_match_shape: "star", per_match_shape: "circle", color: "green", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 15, target: "target_15", rel_match: "relation_15", per_match: "object_15", target_n: "1:5", rel_n: "1:5", per_n: "1:6", rel_match_type: "exact", per_match_type: "one more", target_shape: "triangle", rel_match_shape: "circle", per_match_shape: "triangle", color: "red", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 16, target: "target_16", rel_match: "relation_16", per_match: "object_16", target_n: "1:3", rel_n: "2:6", per_n: "1:4", rel_match_type: "multiplicative ", per_match_type: "one more", target_shape: "square", rel_match_shape: "pentagon", per_match_shape: "square", color: "purple", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 17, target: "target_17", rel_match: "relation_17", per_match: "object_17", target_n: "1:4", rel_n: "2:8", per_n: "1:5", rel_match_type: "multiplicative ", per_match_type: "one more", target_shape: "diamond", rel_match_shape: "square", per_match_shape: "diamond", color: "blue", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 18, target: "target_18", rel_match: "relation_18", per_match: "object_18", target_n: "1:5", rel_n: "2:10", per_n: "1:6", rel_match_type: "multiplicative ", per_match_type: "one more", target_shape: "star", rel_match_shape: "diamond", per_match_shape: "star", color: "yellow", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 19, target: "target_19", rel_match: "relation_19", per_match: "object_19", target_n: "1:3", rel_n: "1:3", per_n: "1:2", rel_match_type: "exact", per_match_type: "one less", target_shape: "circle", rel_match_shape: "star", per_match_shape: "circle", color: "green", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 20, target: "target_20", rel_match: "relation_20", per_match: "object_20", target_n: "1:4", rel_n: "1:4", per_n: "1:3", rel_match_type: "exact", per_match_type: "one less", target_shape: "triangle", rel_match_shape: "pentagon", per_match_shape: "triangle", color: "red", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 21, target: "target_21", rel_match: "relation_21", per_match: "object_21", target_n: "1:5", rel_n: "1:5", per_n: "1:4", rel_match_type: "exact", per_match_type: "one less", target_shape: "star", rel_match_shape: "square", per_match_shape: "star", color: "purple", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 22, target: "target_22", rel_match: "relation_22", per_match: "object_22", target_n: "1:3", rel_n: "2:6", per_n: "1:2", rel_match_type: "multiplicative ", per_match_type: "one less", target_shape: "diamond", rel_match_shape: "circle", per_match_shape: "diamond", color: "blue", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 23, target: "target_23", rel_match: "relation_23", per_match: "object_23", target_n: "1:4", rel_n: "2:8", per_n: "1:3", rel_match_type: "multiplicative ", per_match_type: "one less", target_shape: "square", rel_match_shape: "diamond", per_match_shape: "square", color: "yellow", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null },
+  { trialID: null, itemID: 24, target: "target_24", rel_match: "relation_24", per_match: "object_24", target_n: "1:5", rel_n: "2:10", per_n: "1:4", rel_match_type: "multiplicative ", per_match_type: "one less", target_shape: "pentagon", rel_match_shape: "triangle", per_match_shape: "pentagon", color: "pink", rel_match_pos: "right", rel_choice: 2, choice: null, rt: null, rel_match_score: null }
+];
+const OUTPUT_COLUMNS = [
+  "ID","TrialID","ItemID","Top","Relation_Match","Object_Match",
+  "trialID","itemID","target","rel_match","per_match","target_n","rel_n","per_n",
+  "rel_match_type","per_match_type","target_shape","rel_match_shape","per_match_shape",
+  "color","rel_match_pos","rel_choice","choice","rt","rel_match_score",
+  "Relation_Match_Position","Correct_Choice","Choice","choice_score"
+];
+
+/** ----------------------------
+ *  HELPERS
+ *  ---------------------------- */
+function pad2(n){ return String(n).padStart(2, "0"); }
+
+function timestampYYYYMMDD_HHMMSS(d=new Date()){
+  const Y = d.getFullYear();
+  const M = pad2(d.getMonth()+1);
+  const D = pad2(d.getDate());
+  const h = pad2(d.getHours());
+  const m = pad2(d.getMinutes());
+  const s = pad2(d.getSeconds());
+  return `${Y}${M}${D}_${h}${m}${s}`;
+}
+
+function downloadTextFile(filename, text){
+  const blob = new Blob([text], {type: "text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/** ----------------------------
+ *  BUILD STIM LIST
+ *  ---------------------------- */
+const items = TRIAL_SHEET_ROWS.map((row) => {
+  const id = row.itemID;
+  const { choice, rt, rel_match_score, ...sheetMeta } = row;
+  return {
+    ...sheetMeta,
+    ItemID: id,
+    Top: `${STIM_DIR}/target/item_${id}_target.png`,
+    Relation_Match: `${STIM_DIR}/relational_match/item_${id}_relational_match.png`,
+    Object_Match: `${STIM_DIR}/perceptual_match/item_${id}_perceptual_match.png`
+  };
+});
+
+const preload_images = items.flatMap(it => [it.Top, it.Relation_Match, it.Object_Match]);
+
+/** ----------------------------
+ *  INIT JSPsych
+ *  ---------------------------- */
+let final_csv = null;
+let final_fname = null;
+
+function buildAndDownloadCsv(){
+  const pid = jsPsych.data.get().values()[0]?.ID ?? "NA";
+  final_fname = `S${pid}_MatSamN_${timestampYYYYMMDD_HHMMSS()}.csv`;
+
+  final_csv = jsPsych.data.get()
+    .filter({ is_stim_trial: 1 })
+    .filterColumns(OUTPUT_COLUMNS)
+    .csv();
+  downloadTextFile(final_fname, final_csv);
+}
+
+const jsPsych = initJsPsych({
+  on_finish: () => {
+    // Attempt auto-download immediately when experiment ends
+    buildAndDownloadCsv();
+    if (window.ExperimentPackage && launchContext.taskKey) {
+      window.ExperimentPackage.completeTaskAndReturn(launchContext.taskKey, launchContext.returnUrl, 100);
+    }
+  }
+});
+if (prefilledParticipantId) {
+  jsPsych.data.addProperties({ ID: prefilledParticipantId });
+}
+
+
+/** ----------------------------
+ *  TIMELINE
+ *  ---------------------------- */
+const timeline = [];
+
+// Preload
+timeline.push({
+  type: jsPsychPreload,
+  images: preload_images
+});
+
+if (!prefilledParticipantId) {
+  timeline.push({
+    type: jsPsychSurveyText,
+    questions: [{prompt: "Participant ID:", name: "ID", required: true, placeholder: "e.g., 001"}],
+    button_label: "Start",
+    on_finish: (data) => {
+      jsPsych.data.addProperties({ ID: data.response.ID.trim() });
+    }
+  });
+}
+
+// Instructions
+timeline.push({
+  type: jsPsychHtmlButtonResponse,
+  stimulus: `
+    <div class="instr">
+      <p><strong>Instructions</strong></p>
+      <p>In this task, you will see a picture at the top and two pictures at the bottom.<br/>
+      Your job is to choose which bottom picture goes best with the top picture.</p>
+      <p class="small-note">Click Option A (left) or Option B (right) to continue.</p>
+    </div>
+  `,
+  choices: ["Continue"],
+  button_html: '<button class="choice-btn" style="width:auto; min-height:auto; padding:10px 18px;">%choice%</button>'
+});
+
+// Trials
+const randomized_items = jsPsych.randomization.shuffle(items); // Use this to restore randomized item order.
+//const randomized_items = items; // Fixed order for testing.
+
+randomized_items.forEach((it, idx) => {
+
+  // Use the fixed relation-match side from sti_trial_0403.xlsx.
+  const relation_on_left = it.rel_match_pos === "left";
+  const relation_pos = it.rel_choice;
+  const relation_pos_label = it.rel_match_pos;
+
+  const leftStim  = relation_on_left ? it.Relation_Match : it.Object_Match;
+  const rightStim = relation_on_left ? it.Object_Match   : it.Relation_Match;
+
+  timeline.push({
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+      <div class="prompt">Look at the picture at the top. Which of the two pictures at the bottom goes with it?</div>
+      <div class="trial-wrap">
+        <div class="top-area">
+          <img class="top-img" src="${it.Top}" alt="top stimulus">
+        </div>
+        <div class="gap-between"></div>
+      </div>
+    `,
+    choices: [
+      `<div style="width:100%;">
+         <img class="choice-img" src="${leftStim}" alt="Option A">
+         <div class="option-label">Option A</div>
+       </div>`,
+      `<div style="width:100%;">
+         <img class="choice-img" src="${rightStim}" alt="Option B">
+         <div class="option-label">Option B</div>
+       </div>`
+    ],
+    button_html: [
+      '<button class="choice-btn">%choice%</button>',
+      '<button class="choice-btn">%choice%</button>'
+    ],
+
+    on_start: (trial) => {
+      trial.data = {
+        is_stim_trial: 1,
+        ...it,
+        TrialID: idx + 1,
+        ItemID: it.ItemID,
+        Top: it.Top,
+        Relation_Match: it.Relation_Match,
+        Object_Match: it.Object_Match,
+        Relation_Match_Position: relation_pos_label,
+        Correct_Choice: relation_pos
+      };
+    },
+
+    on_finish: (data) => {
+      // jsPsych's rt is the time from this trial appearing to the button click.
+      // response: 0 = left (Option A), 1 = right (Option B)
+      const responseRt = data.rt;
+      const choice = (data.response === 0) ? 1 : 2; // left=1, right=2
+      data.Choice = choice;
+      data.choice_score = (choice === data.Correct_Choice) ? 1 : 0;
+      data.trialID = data.TrialID;
+      data.itemID = data.ItemID;
+      data.choice = choice;
+      data.rt = responseRt;
+      data.rel_match_score = data.choice_score;
+    }
+  });
+});
+
+// End screen
+timeline.push({
+  type: jsPsychHtmlButtonResponse,
+  stimulus: `
+    <div class="instr">
+      <p><strong>All done - thank you!</strong></p>
+      <p>Your page will jump back in a second.</p>
+    </div>
+  `,
+  choices: [],
+  trial_duration: 1200
+});
+
+
+
+jsPsych.run(timeline);
+</script>
+</html>

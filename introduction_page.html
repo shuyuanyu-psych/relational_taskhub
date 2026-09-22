@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Relational Priming Study</title>
+  <script src="experiment-common.js"></script>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --paper: #fffdf9;
+      --ink: #1f1d1a;
+      --muted: #71695d;
+      --line: #d8cfc0;
+      --accent: #8f4f2a;
+      --accent-soft: #f2dfcf;
+      --shadow: 0 20px 50px rgba(74, 56, 39, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.75), transparent 32%),
+        linear-gradient(135deg, #efe4d5 0%, var(--bg) 48%, #e7dccd 100%);
+      min-height: 100vh;
+    }
+
+    .page {
+      width: min(980px, calc(100vw - 32px));
+      margin: 32px auto;
+      display: grid;
+      gap: 22px;
+    }
+
+    .hero,
+    .panel {
+      background: var(--paper);
+      border: 1px solid rgba(143, 79, 42, 0.14);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 30px 32px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 16px 0 10px;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      line-height: 1.02;
+    }
+
+    .lead {
+      max-width: 760px;
+      font-size: 1.08rem;
+      line-height: 1.65;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 22px;
+    }
+
+    .panel {
+      padding: 24px;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 1.5rem;
+    }
+
+    .subtle {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 0.98rem;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .primary {
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 22px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 12px 24px rgba(143, 79, 42, 0.22);
+    }
+
+    .primary:hover {
+      transform: translateY(-1px);
+    }
+
+    .error {
+      min-height: 1.2em;
+      color: #b42318;
+      font-size: 0.95rem;
+      margin: 0;
+    }
+
+    @media (max-width: 860px) {
+      .grid,
+      .field-row {
+        grid-template-columns: 1fr;
+      }
+
+      .page {
+        width: min(100vw - 20px, 980px);
+        margin: 10px auto 24px;
+      }
+
+      .hero,
+      .panel {
+        padding: 20px;
+        border-radius: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="eyebrow">Experiment Package</div>
+      <h1>Welcome to our study!</h1>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Participant Information</h2>
+
+        <form id="intro-form">
+          <div class="field-row">
+            <label>
+              ID
+              <input id="participant-number" name="participant_number" type="number" min="1" step="1" required />
+            </label>
+
+            <label>
+              Age
+              <input name="age" type="number" min="1" max="120" inputmode="numeric" required />
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label>
+              Gender
+              <select name="gender" required>
+                <option value="">Select one</option>
+                <option value="Boy">Boy</option>
+                <option value="Girl">Girl</option>
+                <option value="Non-binary">Non-binary</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </label>
+
+            <label>
+              Which year are you in?
+              <select name="year_in_school" required>
+                <option value="">Select one</option>
+                <option value="First year">First year</option>
+                <option value="Second year">Second year</option>
+                <option value="Third year">Third year</option>
+                <option value="Fourth year">Fourth year</option>
+                <option value="Fifth year or above">Fifth year or above</option>
+                <option value="Graduate student">Graduate student</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label>
+              What's your major?
+              <input name="major" type="text" autocomplete="off" required />
+            </label>
+
+            <label>
+              First language
+              <select name="native_language" required>
+                <option value="">Select one</option>
+                <option value="Arabic">Arabic</option>
+                <option value="Chinese">Chinese</option>
+                <option value="English">English</option>
+                <option value="Farsi">Farsi</option>
+                <option value="French">French</option>
+                <option value="German">German</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Italian">Italian</option>
+                <option value="Korean">Korean</option>
+                <option value="Russian">Russian</option>
+                <option value="Spanish">Spanish</option>
+                <option value="Vietnamese">Vietnamese</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label>
+              Second language
+              <select name="second_language" required>
+                <option value="">Select one</option>
+                <option value="None">None</option>
+                <option value="Arabic">Arabic</option>
+                <option value="Chinese">Chinese</option>
+                <option value="English">English</option>
+                <option value="Farsi">Farsi</option>
+                <option value="French">French</option>
+                <option value="German">German</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Italian">Italian</option>
+                <option value="Korean">Korean</option>
+                <option value="Russian">Russian</option>
+                <option value="Spanish">Spanish</option>
+                <option value="Vietnamese">Vietnamese</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+
+            <label>
+              Race
+              <select name="ethnicity" required>
+                <option value="">Select one</option>
+                <option value="Asian">Asian</option>
+                <option value="Black or African American">Black or African American</option>
+                <option value="Hispanic or Latino">Hispanic or Latino</option>
+                <option value="Native American or Alaska Native">Native American or Alaska Native</option>
+                <option value="Native Hawaiian or Other Pacific Islander">Native Hawaiian or Other Pacific Islander</option>
+                <option value="White">White</option>
+                <option value="Multiracial">Multiracial</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </label>
+          </div>
+
+          <p id="form-error" class="error"></p>
+
+          <div class="actions">
+            <button class="primary" type="submit">Save and Continue</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("intro-form");
+    const errorBox = document.getElementById("form-error");
+    const requiredFields = [
+      { element: form.elements.participant_number, label: "ID" },
+      { element: form.elements.age, label: "Age" },
+      { element: form.elements.gender, label: "Gender" },
+      { element: form.elements.year_in_school, label: "Year in school" },
+      { element: form.elements.major, label: "Major" },
+      { element: form.elements.native_language, label: "first language" },
+      { element: form.elements.second_language, label: "Second language" },
+      { element: form.elements.ethnicity, label: "Ethnicity" }
+    ];
+
+    window.ExperimentPackage.clearState();
+    form.reset();
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      errorBox.textContent = "";
+
+      const missingField = requiredFields.find((field) => !field.element.value.trim());
+      if (missingField) {
+        errorBox.textContent = `Please complete ${missingField.label} before continuing.`;
+        missingField.element.focus();
+        return;
+      }
+
+      const participantNumber = form.elements.participant_number.value.trim();
+      const group = window.ExperimentPackage.getGroupForParticipant(participantNumber);
+
+      if (!group) {
+        errorBox.textContent = "Enter a positive integer participant ID before continuing.";
+        return;
+      }
+
+      const state = window.ExperimentPackage.startSession({
+        participantNumber,
+        age: form.elements.age.value,
+        gender: form.elements.gender.value,
+        yearInSchool: form.elements.year_in_school.value,
+        major: form.elements.major.value,
+        nativeLanguage: form.elements.native_language.value,
+        secondLanguage: form.elements.second_language.value,
+        ethnicity: form.elements.ethnicity.value
+      });
+
+      window.ExperimentPackage.downloadIntroData(state);
+      window.location.href = "task_hub.html";
+    });
+
+  </script>
+</body>
+</html>
