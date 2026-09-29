@@ -148,20 +148,10 @@
     const participantNumber = sanitizeText(payload.participantNumber);
     const group = getGroupForParticipant(participantNumber);
     const order = getOrderForGroup(group);
-    const demographics = {
-      age: sanitizeText(payload.age),
-      gender: sanitizeText(payload.gender),
-      yearInSchool: sanitizeText(payload.yearInSchool),
-      major: sanitizeText(payload.major),
-      nativeLanguage: sanitizeText(payload.nativeLanguage),
-      secondLanguage: sanitizeText(payload.secondLanguage),
-      ethnicity: sanitizeText(payload.ethnicity)
-    };
-
     const state = {
       participantId: participantNumber,
       participantNumber,
-      demographics,
+      demographics: {},
       group,
       order,
       completedTasks: {},
@@ -249,13 +239,6 @@
       second_task: TASKS[currentState.order[1]] ? TASKS[currentState.order[1]].label : "",
       third_task: TASKS[currentState.order[2]] ? TASKS[currentState.order[2]].label : "",
       fourth_task: TASKS[currentState.order[3]] ? TASKS[currentState.order[3]].label : "",
-      age: currentState.demographics.age || "",
-      gender: currentState.demographics.gender || "",
-      year_in_school: currentState.demographics.yearInSchool || "",
-      major: currentState.demographics.major || "",
-      native_language: currentState.demographics.nativeLanguage || "",
-      second_language: currentState.demographics.secondLanguage || "",
-      ethnicity: currentState.demographics.ethnicity || "",
       created_at: currentState.createdAt || ""
     };
 

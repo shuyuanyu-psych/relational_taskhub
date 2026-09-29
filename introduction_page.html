@@ -198,109 +198,10 @@
         <h2>Participant Information</h2>
 
         <form id="intro-form">
-          <div class="field-row">
-            <label>
-              ID
-              <input id="participant-number" name="participant_number" type="number" min="1" step="1" required />
-            </label>
-
-            <label>
-              Age
-              <input name="age" type="number" min="1" max="120" inputmode="numeric" required />
-            </label>
-          </div>
-
-          <div class="field-row">
-            <label>
-              Gender
-              <select name="gender" required>
-                <option value="">Select one</option>
-                <option value="Boy">Boy</option>
-                <option value="Girl">Girl</option>
-                <option value="Non-binary">Non-binary</option>
-                <option value="Prefer not to say">Prefer not to say</option>
-              </select>
-            </label>
-
-            <label>
-              Which year are you in?
-              <select name="year_in_school" required>
-                <option value="">Select one</option>
-                <option value="First year">First year</option>
-                <option value="Second year">Second year</option>
-                <option value="Third year">Third year</option>
-                <option value="Fourth year">Fourth year</option>
-                <option value="Fifth year or above">Fifth year or above</option>
-                <option value="Graduate student">Graduate student</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="field-row">
-            <label>
-              What's your major?
-              <input name="major" type="text" autocomplete="off" required />
-            </label>
-
-            <label>
-              First language
-              <select name="native_language" required>
-                <option value="">Select one</option>
-                <option value="Arabic">Arabic</option>
-                <option value="Chinese">Chinese</option>
-                <option value="English">English</option>
-                <option value="Farsi">Farsi</option>
-                <option value="French">French</option>
-                <option value="German">German</option>
-                <option value="Hindi">Hindi</option>
-                <option value="Italian">Italian</option>
-                <option value="Korean">Korean</option>
-                <option value="Russian">Russian</option>
-                <option value="Spanish">Spanish</option>
-                <option value="Vietnamese">Vietnamese</option>
-                <option value="Other">Other</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="field-row">
-            <label>
-              Second language
-              <select name="second_language" required>
-                <option value="">Select one</option>
-                <option value="None">None</option>
-                <option value="Arabic">Arabic</option>
-                <option value="Chinese">Chinese</option>
-                <option value="English">English</option>
-                <option value="Farsi">Farsi</option>
-                <option value="French">French</option>
-                <option value="German">German</option>
-                <option value="Hindi">Hindi</option>
-                <option value="Italian">Italian</option>
-                <option value="Korean">Korean</option>
-                <option value="Russian">Russian</option>
-                <option value="Spanish">Spanish</option>
-                <option value="Vietnamese">Vietnamese</option>
-                <option value="Other">Other</option>
-              </select>
-            </label>
-
-            <label>
-              Race
-              <select name="ethnicity" required>
-                <option value="">Select one</option>
-                <option value="Asian">Asian</option>
-                <option value="Black or African American">Black or African American</option>
-                <option value="Hispanic or Latino">Hispanic or Latino</option>
-                <option value="Native American or Alaska Native">Native American or Alaska Native</option>
-                <option value="Native Hawaiian or Other Pacific Islander">Native Hawaiian or Other Pacific Islander</option>
-                <option value="White">White</option>
-                <option value="Multiracial">Multiracial</option>
-                <option value="Other">Other</option>
-                <option value="Prefer not to say">Prefer not to say</option>
-              </select>
-            </label>
-          </div>
+          <label>
+            Participant ID
+            <input id="participant-number" name="participant_number" type="number" min="1" step="1" required />
+          </label>
 
           <p id="form-error" class="error"></p>
 
@@ -316,14 +217,7 @@
     const form = document.getElementById("intro-form");
     const errorBox = document.getElementById("form-error");
     const requiredFields = [
-      { element: form.elements.participant_number, label: "ID" },
-      { element: form.elements.age, label: "Age" },
-      { element: form.elements.gender, label: "Gender" },
-      { element: form.elements.year_in_school, label: "Year in school" },
-      { element: form.elements.major, label: "Major" },
-      { element: form.elements.native_language, label: "first language" },
-      { element: form.elements.second_language, label: "Second language" },
-      { element: form.elements.ethnicity, label: "Ethnicity" }
+      { element: form.elements.participant_number, label: "participant ID" }
     ];
 
     window.ExperimentPackage.clearState();
@@ -349,14 +243,7 @@
       }
 
       const state = window.ExperimentPackage.startSession({
-        participantNumber,
-        age: form.elements.age.value,
-        gender: form.elements.gender.value,
-        yearInSchool: form.elements.year_in_school.value,
-        major: form.elements.major.value,
-        nativeLanguage: form.elements.native_language.value,
-        secondLanguage: form.elements.second_language.value,
-        ethnicity: form.elements.ethnicity.value
+        participantNumber
       });
 
       window.ExperimentPackage.downloadIntroData(state);
